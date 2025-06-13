@@ -1,0 +1,12 @@
+{
+  "extends": "ts-config-single-spa",
+  "files": ["src/ssr-root-config.ts"],
+  "compilerOptions": {
+    "declarationDir": "dist",
+    "jsx": "react-jsx",
+    "lib": ["ES2015", "DOM"],
+    "target": "ES2015"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test*", "src/modules/**/*"]
+}
