@@ -2,12 +2,90 @@
 <html lang="en">
 
 <head>
+  <script src="https://browser.sentry-cdn.com/9.29.0/bundle.tracing.replay.debug.min.js"
+    integrity="sha384-vpIzxt39a1stiG7YuleHsxI3nCsCvbTWypO24mX80HW9SF4wZ67FGa13HJiIgYcV"
+    crossorigin="anonymous"></script>
+  <script src="https://browser.sentry-cdn.com/9.29.0/multiplexedtransport.min.js"
+    integrity="sha384-XYhuZhz2/b+Mffea35ZvqHpjVq3omX5ZZhvkJVQZaL1EIU86ZMgn9MbV1q1Ig7uZ"
+    crossorigin="anonymous"></script>
+  <script src="https://browser.sentry-cdn.com/9.29.0/modulemetadata.min.js"
+    integrity="sha384-EfcH6gk4Y3nGCcnmz3h88+LjAZPlSr22ts+dgdMCu/z3DXdnRYQOb05V+WGGGLXr"
+    crossorigin="anonymous"></script>
+
+  <script>
+    // A SIMPLE KEY TO EXTRACT THE MODULE METADATA FROM THE EVENT'S EXTRAS (INJECTED FROM THE BEFORE SEND FUNCTION, EXTRACED FROM THE CUSTOM TRANSPORT)
+    const EXTRA_KEY = "ROUTE_TO";
+
+    // A CUSTOM TRANSPORT THAT ROUTES ALL OF THE EVENTS (EVEN FROM MODULES) TO THE CORRESPONDING SENTRY PROJECTS
+    const transport = Sentry.makeMultiplexedTransport(
+      Sentry.makeFetchTransport,
+      (args) => {
+        const event = args.getEvent();
+        if (
+          event &&
+          event.extra &&
+          EXTRA_KEY in event.extra &&
+          Array.isArray(event.extra[EXTRA_KEY])
+        ) {
+          return event.extra[EXTRA_KEY];
+        }
+        return [];
+      }
+    );
+
+    // INITIALIZE SENTRY ONLY ONCE AT THE ROOT, BUT NOT IN THE MODULES
+    Sentry.init({
+      dsn: "https://981c16ca9942abbc9d734473a8ef1725@o4506044970565632.ingest.us.sentry.io/4509492952039424",
+
+      release: "my-project-name.2.3.12",
+      integrations: [
+        Sentry.moduleMetadataIntegration(),
+        Sentry.browserTracingIntegration(),
+        Sentry.replayIntegration(),
+      ],
+      transport,
+
+      // A CUSTOM BEFORE SEND FUNCTION THAT EXTRACTS MODULE METADATA FROM THE STACKTRACE AND INJECTS IT TO THE EVENT'S EXTRAS (TO BE PICKED UP BY THE CUSTOM TRANSPORT)
+      // EACH MODULE HAS A WEBPACK PLUGIN THAT INJECTS THE MODULE METADATA TO THE STACKTRACE. LOOK AT THE MODULES' WEBPACK CONFIGS TO SEE WHAT GETS INJECTED.
+      // MODULE WEBPACK INJECTS METADATA TO EACH EVENTS' STACK FRAMES -> BEFORE SEND EXTRACTS STACK FRAME FROM THE EVENT INTO THE EVENT'S EXTRAS -> CUSTOM TRANSPORT PICKS UP DSN AND RELEASE FROM EXTRAS AND USES THEM TO ROUTE THE EVENT TO THE CORRECT SENTRY PROJECT
+      beforeSend: (event) => {
+        if (event?.exception?.values?.[0].stacktrace.frames) {
+          const frames = event.exception.values[0].stacktrace.frames;
+          // Find the last frame with module metadata containing a DSN
+          const routeTo = frames
+            .filter((frame) => frame.module_metadata && frame.module_metadata.dsn)
+            .map((v) => v.module_metadata)
+            .slice(-1); // using top frame only - you may want to customize this according to your needs
+          if (routeTo.length) {
+            event.extra = {
+              ...event.extra,
+              [EXTRA_KEY]: routeTo,
+            };
+          }
+        }
+        return event;
+      },
+
+      tracesSampleRate: 1.0,
+
+      tracePropagationTargets: [
+        "localhost",
+        /^https:\/\/yourserver\.io\/api/,
+      ],
+
+      replaysSessionSampleRate: 1.0,
+      replaysOnErrorSampleRate: 1.0,
+    });
+  </script>
+
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Root Config</title>
+  <!-- MAKE SURE TO ADD worker-src 'self' blob:; TO THE CONTENT SECURITY POLICY SO SESSION REPLAY CAN REGISTER ITS OWN WORKER -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self' https: localhost:*; script-src 'unsafe-inline' 'unsafe-eval' https: localhost:*; connect-src https: localhost:* ws://localhost:*; style-src 'unsafe-inline' https:; object-src 'none';">
+    content="default-src 'self' https: localhost:*; script-src 'unsafe-inline' 'unsafe-eval' https: localhost:*; worker-src 'self' blob:; connect-src https: localhost:* ws://localhost:*; style-src 'unsafe-inline' https:; object-src 'none';">
   <meta name="importmap-type" content="importmap" />
   <!-- If you wish to turn off import-map-overrides for specific environments (prod), uncomment the line below -->
   <!-- More info at https://github.com/single-spa/import-map-overrides/blob/main/docs/configuration.md#domain-list -->

@@ -1,5 +1,6 @@
 const { merge } = require('webpack-merge');
 const singleSpaDefaults = require('webpack-config-single-spa-react-ts');
+const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 
 module.exports = (webpackConfigEnv, argv) => {
   const defaultConfig = singleSpaDefaults({
@@ -25,6 +26,14 @@ module.exports = (webpackConfigEnv, argv) => {
           'X-Requested-With, content-type, Authorization',
       },
     },
+    plugins: [
+      sentryWebpackPlugin({
+        moduleMetadata: ({ release }) => ({
+          dsn: 'https://d7714097bec3bed9366450dd7d75083f@o4506044970565632.ingest.us.sentry.io/4509492978712576',
+          release,
+        }),
+      }),
+    ],
   });
 
   return config;

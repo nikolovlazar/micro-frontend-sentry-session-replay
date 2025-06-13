@@ -16,7 +16,6 @@
     "check-format": "prettier --check .",
     "check-format:modules": "pnpm -r --parallel run check-format",
     "check-format:all": "pnpm check-format && pnpm check-format:modules",
-    "prepare": "husky install",
     "build": "webpack --mode=production && tsc",
     "build:modules": "pnpm -r --parallel run build",
     "build:all": "pnpm build && pnpm build:modules"
@@ -33,7 +32,6 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.1",
     "html-webpack-plugin": "^5.3.2",
-    "husky": "^7.0.2",
     "jest": "^27.5.1",
     "jest-cli": "^27.5.1",
     "prettier": "^2.3.2",
