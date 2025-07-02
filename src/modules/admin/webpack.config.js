@@ -28,6 +28,8 @@ module.exports = (webpackConfigEnv, argv) => {
     },
     plugins: [
       sentryWebpackPlugin({
+        org: 'nikolovlazar',
+        project: 'ssr-admin',
         moduleMetadata: ({ release }) => ({
           dsn: 'https://d7714097bec3bed9366450dd7d75083f@o4506044970565632.ingest.us.sentry.io/4509492978712576',
           release,

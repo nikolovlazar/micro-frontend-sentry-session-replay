@@ -51,7 +51,8 @@
     "@types/jest": "^27.0.1",
     "@types/systemjs": "^6.1.1",
     "single-spa": "^5.9.3",
-    "@types/webpack-env": "^1.16.2"
+    "@types/webpack-env": "^1.16.2",
+    "react-router": "^7.6.3"
   },
   "types": "dist/ssr-root-config.d.ts"
 }

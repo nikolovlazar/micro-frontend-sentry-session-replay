@@ -1,26 +1,35 @@
-import React from "react";
-import ReactDOMClient from "react-dom/client";
-import singleSpaReact from "single-spa-react";
-import Root from "./root.component";
+import React from 'react';
+import ReactDOMClient from 'react-dom/client';
+import singleSpaReact from 'single-spa-react';
+import Root from './root.component';
+import ErrorBoundaryComponent from './error-boundary';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  createRoutesFromElements,
+  Route,
+} from 'react-router';
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route
+      path='/'
+      element={<Root />}
+      errorElement={<ErrorBoundaryComponent />}
+    />
+  )
+);
+
+const RootComponent = () => {
+  return <RouterProvider router={router} />;
+};
 
 const lifecycles = singleSpaReact({
-	React,
-	ReactDOMClient,
-	rootComponent: Root,
-	errorBoundary(err, info, props) {
-		console.error("Microfrontend @ssr/users error:", err, info);
-		return (
-			<div style={{ padding: "20px", border: "1px solid red", margin: "10px" }}>
-				<h3>Something went wrong in @ssr/users</h3>
-				<details>
-					<summary>Error details</summary>
-					<pre>{err?.stack}</pre>
-				</details>
-			</div>
-		);
-	},
-	domElementGetter: () => document.getElementById("users"),
-	renderType: "createRoot",
+  React,
+  ReactDOMClient,
+  rootComponent: RootComponent,
+  domElementGetter: () => document.getElementById('users'),
+  renderType: 'createRoot',
 });
 
 export const { bootstrap, mount, unmount } = lifecycles;
